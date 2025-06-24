@@ -1,7 +1,6 @@
 <?php
 // ========= إعداد ==========
 $TOKEN = "7537566063:AAEzUomHLj-6jT36Avm91vLP4hmw60JSLes";
-$CHANNEL_USERNAME = "@JJF_l"; // القناة المطلوب الاشتراك فيها
 $DEVELOPER_USERNAME = "@wgggk";
 $website = "https://api.telegram.org/bot$TOKEN/";
 
@@ -16,12 +15,21 @@ function load_users() {
     $file = 'users.json';
     return file_exists($file) ? json_decode(file_get_contents($file), true) : [];
 }
+
 function save_users($users) {
     file_put_contents('users.json', json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
+
 $users = load_users();
 $lang = $users[$chat_id]['lang'] ?? 'ar';
 $page = $users[$chat_id]['page'] ?? 0;
+
+// ========= اختيار اللغة ==========
+if (in_array($text, ['🇸🇦 Arabic', '🇺🇸 English'])) {
+    $lang = ($text == '🇸🇦 Arabic') ? 'ar' : 'en';
+    $users[$chat_id]['lang'] = $lang;
+    save_users($users);
+}
 
 // ========= الترجمة ==========
 function t($key, $lang) {
@@ -64,38 +72,8 @@ function t($key, $lang) {
     return ($lang == 'ar') ? ($ar[$key] ?? $key) : ($en[$key] ?? $key);
 }
 
-// ========= تحقق الاشتراك ==========
-function isUserJoined($chat_id) {
-    global $TOKEN, $CHANNEL_USERNAME;
-    $url = "https://api.telegram.org/bot$TOKEN/getChatMember?chat_id=$CHANNEL_USERNAME&user_id=$chat_id";
-    $response = json_decode(file_get_contents($url), true);
-    $status = $response['result']['status'] ?? '';
-    return in_array($status, ['member', 'administrator', 'creator']);
-}
 
-// ========= منع غير المشتركين من البداية ==========
-if (!isUserJoined($chat_id)) {
-    $buttons = [[['text' => t('check_join', $lang)]]];
-    sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
-    exit;
-}
-
-// ========= إرسال رسالة ==========
-function sendMessage($chat_id, $text, $keyboard = null, $inline = null) {
-    global $website;
-    $replyMarkup = [];
-    if ($keyboard) $replyMarkup['keyboard'] = $keyboard;
-    if ($inline) $replyMarkup['inline_keyboard'] = $inline;
-    if (!empty($replyMarkup)) $replyMarkup['resize_keyboard'] = true;
-    $params = [
-        'chat_id' => $chat_id,
-        'text' => $text,
-        'reply_markup' => !empty($replyMarkup) ? json_encode($replyMarkup) : null,
-        'parse_mode' => 'Markdown'
-    ];
-    file_get_contents($website . "sendMessage?" . http_build_query($params));
-}
-
+// ========= المتاجر ==========
 $stores = [
     ['ar' => 'كريم', 'en' => 'Careem', 'slug' => 'careem'],
     ['ar' => 'نون', 'en' => 'Noon', 'slug' => 'noon'],
@@ -244,5 +222,4 @@ if ($text == "/start" || $text == t('back_to_menu', $lang)) {
     }
     sendMessage($chat_id, "🤖 غير مفهوم: $text");
 }
-
 ?>
