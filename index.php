@@ -131,7 +131,7 @@ function build_store_keyboard($lang, $page) {
 }
 
 // ========= أوامر ==========
-if ($text == "/start" || $text == t('back_to_menu')) {
+if ($text == "/start" || $text == t('back_to_menu', $lang)) {
     $buttons = [
         [["text" => t('start_coupon', $lang)]],
         [["text" => t('change_lang', $lang)]],
