@@ -23,13 +23,6 @@ $users = load_users();
 $lang = $users[$chat_id]['lang'] ?? 'ar';
 $page = $users[$chat_id]['page'] ?? 0;
 
-// ========= اختيار اللغة ==========
-if (in_array($text, ['🇸🇦 Arabic', '🇺🇸 English'])) {
-    $lang = ($text == '🇸🇦 Arabic') ? 'ar' : 'en';
-    $users[$chat_id]['lang'] = $lang;
-    save_users($users);
-}
-
 // ========= الترجمة ==========
 function t($key, $lang) {
     $ar = [
@@ -80,6 +73,13 @@ function isUserJoined($chat_id) {
     return in_array($status, ['member', 'administrator', 'creator']);
 }
 
+// ========= منع غير المشتركين ==========
+if ($chat_id && !isUserJoined($chat_id) && $text != t('check_join', $lang)) {
+    $buttons = [[["text" => t('check_join', $lang)]]];
+    sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
+    exit;
+}
+
 // ========= إرسال رسالة ==========
 function sendMessage($chat_id, $text, $keyboard = null, $inline = null) {
     global $website;
@@ -99,9 +99,9 @@ function sendMessage($chat_id, $text, $keyboard = null, $inline = null) {
 }
 
 // ========= المتاجر ==========
-$stores = [/* نفس المصفوفة اللي عندك بدون تغيير */];
+$stores = [/* نفس مصفوفة المتاجر السابقة */];
 
-// ========= جلب الكوبون ==========
+// ========= كوبونات ==========
 function get_coupon_code($slug) {
     $url = "https://saudi.alcoupon.com/ar/discount-codes/" . $slug;
     $html = @file_get_contents($url);
@@ -111,7 +111,7 @@ function get_coupon_code($slug) {
     return "لا يوجد كود حالياً لهذا المتجر.";
 }
 
-// ========= بناء الكيبورد ==========
+// ========= كيبورد المتاجر ==========
 function build_store_keyboard($lang, $page) {
     global $stores;
     $per_page = 10;
@@ -130,13 +130,8 @@ function build_store_keyboard($lang, $page) {
     return $buttons;
 }
 
-// ========= الأوامر ==========
-if ($text == "/start" || $text == t('back_to_menu', $lang)) {
-    if (!isUserJoined($chat_id)) {
-        $buttons = [[["text" => t('check_join', $lang)]]];
-        sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
-        exit;
-    }
+// ========= أوامر ==========
+if ($text == "/start" || $text == t('back_to_menu')) {
     $buttons = [
         [["text" => t('start_coupon', $lang)]],
         [["text" => t('change_lang', $lang)]],
@@ -145,11 +140,6 @@ if ($text == "/start" || $text == t('back_to_menu', $lang)) {
     sendMessage($chat_id, "👋", $buttons);
 
 } elseif ($text == t('start_coupon', $lang)) {
-    if (!isUserJoined($chat_id)) {
-        $buttons = [[["text" => t('check_join', $lang)]]];
-        sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
-        exit;
-    }
     $users[$chat_id]['page'] = 0;
     save_users($users);
     sendMessage($chat_id, t('choose_store', $lang), build_store_keyboard($lang, 0));
