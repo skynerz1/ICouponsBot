@@ -1,6 +1,7 @@
 <?php
 // ========= إعداد ==========
 $TOKEN = "7537566063:AAEzUomHLj-6jT36Avm91vLP4hmw60JSLes";
+$CHANNEL_USERNAME = "@JJF_l";
 $DEVELOPER_USERNAME = "@wgggk";
 $website = "https://api.telegram.org/bot$TOKEN/";
 
@@ -15,11 +16,9 @@ function load_users() {
     $file = 'users.json';
     return file_exists($file) ? json_decode(file_get_contents($file), true) : [];
 }
-
 function save_users($users) {
     file_put_contents('users.json', json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
-
 $users = load_users();
 $lang = $users[$chat_id]['lang'] ?? 'ar';
 $page = $users[$chat_id]['page'] ?? 0;
@@ -41,8 +40,6 @@ function t($key, $lang) {
         'next' => '⏭ التالي',
         'back' => '⏮ الرجوع',
         'refresh' => '🔄 تحديث القائمة',
-        'check_join' => '✅ تحقق من الاشتراك',
-        'must_join' => '📛 يجب الاشتراك في القناة أولاً:',
         'lang_select' => '🌐 اختر اللغة:',
         'lang_ar' => '🇸🇦 العربية',
         'lang_en' => '🇺🇸 English',
@@ -59,8 +56,6 @@ function t($key, $lang) {
         'next' => '⏭ Next',
         'back' => '⏮ Back',
         'refresh' => '🔄 Refresh',
-        'check_join' => '✅ Check Subscription',
-        'must_join' => '📛 You must join the channel first:',
         'lang_select' => '🌐 Select language:',
         'lang_ar' => '🇸🇦 Arabic',
         'lang_en' => '🇺🇸 English',
@@ -72,6 +67,23 @@ function t($key, $lang) {
     return ($lang == 'ar') ? ($ar[$key] ?? $key) : ($en[$key] ?? $key);
 }
 
+// ========= إرسال رسالة ==========
+function sendMessage($chat_id, $text, $keyboard = null, $inline = null) {
+    global $website;
+    $replyMarkup = [];
+
+    if ($keyboard) $replyMarkup['keyboard'] = $keyboard;
+    if ($inline) $replyMarkup['inline_keyboard'] = $inline;
+    if (!empty($replyMarkup)) $replyMarkup['resize_keyboard'] = true;
+
+    $params = [
+        'chat_id' => $chat_id,
+        'text' => $text,
+        'reply_markup' => !empty($replyMarkup) ? json_encode($replyMarkup) : null,
+        'parse_mode' => 'Markdown'
+    ];
+    file_get_contents($website . "sendMessage?" . http_build_query($params));
+}
 
 // ========= المتاجر ==========
 $stores = [
@@ -158,11 +170,6 @@ if ($text == "/start" || $text == t('back_to_menu', $lang)) {
     sendMessage($chat_id, "👋", $buttons);
 
 } elseif ($text == t('start_coupon', $lang)) {
-    if (!isUserJoined($chat_id)) {
-        $buttons = [[["text" => t('check_join', $lang)]]];
-        sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
-        exit;
-    }
     $users[$chat_id]['page'] = 0;
     save_users($users);
     sendMessage($chat_id, t('choose_store', $lang), build_store_keyboard($lang, 0));
@@ -179,14 +186,6 @@ if ($text == "/start" || $text == t('back_to_menu', $lang)) {
 
 } elseif ($text == t('refresh', $lang)) {
     sendMessage($chat_id, t('choose_store', $lang), build_store_keyboard($lang, $page));
-
-} elseif ($text == t('check_join', $lang)) {
-    if (isUserJoined($chat_id)) {
-        sendMessage($chat_id, t('choose_store', $lang), build_store_keyboard($lang, $page));
-    } else {
-        $buttons = [[["text" => t('check_join', $lang)]]];
-        sendMessage($chat_id, t('must_join', $lang) . "\nhttps://t.me/" . str_replace("@", "", $CHANNEL_USERNAME), $buttons);
-    }
 
 } elseif ($text == t('change_lang', $lang)) {
     $buttons = [
@@ -208,14 +207,9 @@ if ($text == "/start" || $text == t('back_to_menu', $lang)) {
 } else {
     foreach ($stores as $store) {
         if ($text == $store[$lang]) {
-            $code = get_coupon_code($store['slug']);
+            $code = $store['code'] ?? get_coupon_code($store['slug']);
             $msg = "🎁 *كود خصم {$store[$lang]}:*\n\n`$code`\n\nBy $DEVELOPER_USERNAME";
-            $inline = [
-                [[
-                    'text' => t('subscribe_channel', $lang),
-                    'url' => "https://t.me/" . str_replace("@", "", $CHANNEL_USERNAME)
-                ]]
-            ];
+            $inline = [[['text' => t('subscribe_channel', $lang), 'url' => "https://t.me/" . str_replace("@", "", $CHANNEL_USERNAME)]]];
             sendMessage($chat_id, $msg, null, $inline);
             exit;
         }
