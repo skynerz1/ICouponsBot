@@ -1,6 +1,6 @@
 <?php
 // ========= إعداد ==========
-$TOKEN = "7537566063:AAEzUomHLj-6jT36Avm91vLP4hmw60JSLes";
+$TOKEN = "8044751545:AAGlip1dHMQX61nlb8YZVogvyd28Oi1OmrQ";
 $CHANNEL_USERNAME = "@JJF_l"; // القناة المطلوب الاشتراك فيها
 $DEVELOPER_USERNAME = "@wgggk";
 $website = "https://api.telegram.org/bot$TOKEN/";
