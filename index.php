@@ -140,27 +140,7 @@ function get_coupon_code($slug) {
     return "لا يوجد كود حالياً لهذا المتجر.";
 }
 
-// ✅ اشتراك إجباري في قناة @JJF_l (يعمل فقط مع الرسائل)
-if ($message) {
-    $channel = "@JJF_l";
-    $check = json_decode(file_get_contents("https://api.telegram.org/bot" . API_KEY . "/getChatMember?chat_id=$channel&user_id=$user_id"), true);
-    $status = $check["result"]["status"] ?? null;
 
-    if ($status != "member" && $status != "administrator" && $status != "creator") {
-        bot('sendMessage', [
-            'chat_id' => $chat_id,
-            'text' => "🚫 لا يمكنك استخدام البوت قبل الاشتراك في القناة التالية:\n📢 $channel\n\nوايضا القروب @fx2ch\n✅ بعد الاشتراك، اضغط /start.",
-            'reply_markup' => json_encode([
-                'inline_keyboard' => [
-                    [['text' => "🔔 اشترك الآن", 'url' => "https://t.me/" . ltrim($channel, '@')]],
-                    [['text' => "🔔 اشترك الآن", 'url' => "https://t.me/fx2ch"]]
-
-                ]
-            ])
-        ]);
-        exit;
-    }
-}
 
 // ========= بناء قائمة المتاجر ==========
 function build_store_keyboard($lang, $page) {
